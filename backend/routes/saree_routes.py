@@ -35,7 +35,7 @@ async def create_saree(saree: SareeCreate):
     await db.sarees.insert_one(saree_doc.copy())
     return Saree(**saree_doc)
 
-@router.get("/", response_model=List[Saree])
+@router.get("/")
 async def get_sarees():
     """Get all sarees for seller"""
     db = get_database()
