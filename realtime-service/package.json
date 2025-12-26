@@ -1,8 +1,12 @@
 {
-  "name": "realtime-service",
+  "name": "saree-live-realtime",
   "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
+  "description": "Real-time comment capture service for Saree Live Commerce",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
   "dependencies": {
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
@@ -10,5 +14,8 @@
     "mongodb": "^7.0.0",
     "redis": "^5.10.0",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
