@@ -6,18 +6,36 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Remove token interceptor for now
+// Add token to requests if available
 api.interceptors.request.use(
   (config) => {
-    // Token handling removed
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// Handle 401 errors (unauthorized) - redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('seller');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authService = {
   sendOTP: (phone) => api.post('/auth/send-otp', { phone }),
   verifyOTP: (phone, otp) => api.post('/auth/verify-otp', { phone, otp }),
+  getMe: () => api.get('/auth/me'),
+  logout: () => api.post('/auth/logout'),
 };
 
 export const sareeService = {
@@ -41,10 +59,17 @@ export const orderService = {
   getOne: (orderId) => api.get(`/orders/${orderId}`),
   create: (data, sessionId) => api.post('/orders/', data, { params: { live_session_id: sessionId } }),
   updateStatus: (orderId, status) => api.put(`/orders/${orderId}/status`, null, { params: { order_status: status } }),
+  getMessages: (orderId) => api.get(`/orders/${orderId}/messages`),
+  getPayment: (orderId) => api.get(`/orders/${orderId}/payment`),
 };
 
 export const paymentService = {
   createPaymentLink: (orderId, gateway = 'razorpay') => api.post(`/payments/create-payment-link/${orderId}`, null, { params: { gateway } }),
+  getTransactions: () => api.get('/payments/transactions'),
+};
+
+export const whatsappService = {
+  getMessages: (orderId) => api.get(`/orders/${orderId}/messages`),
 };
 
 export default api;
