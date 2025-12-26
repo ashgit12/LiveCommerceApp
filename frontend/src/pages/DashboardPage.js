@@ -76,7 +76,7 @@ const DashboardPage = () => {
           <Button 
             size="lg" 
             className="btn-hover-lift"
-            onClick={() => toast.info('Go Live feature coming soon!')}
+            onClick={() => navigate('/go-live')}
             data-testid="go-live-btn"
           >
             <Video className="mr-2 h-5 w-5" />
@@ -140,14 +140,14 @@ const DashboardPage = () => {
             </CardHeader>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => toast.info('Orders page coming soon!')} data-testid="orders-link">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/orders')} data-testid="orders-link">
             <CardHeader>
               <CardTitle className="text-lg">Orders</CardTitle>
               <CardDescription>Track and manage orders</CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => toast.info('Analytics coming soon!')} data-testid="analytics-link">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/analytics')} data-testid="analytics-link">
             <CardHeader>
               <CardTitle className="text-lg">Analytics</CardTitle>
               <CardDescription>View performance metrics</CardDescription>
