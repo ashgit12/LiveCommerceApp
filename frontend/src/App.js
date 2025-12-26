@@ -13,24 +13,24 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className=\"min-h-screen flex items-center justify-center\">
-        <div className=\"animate-spin rounded-full h-12 w-12 border-b-2 border-primary\"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  return token ? children : <Navigate to=\"/login\" />;
+  return token ? children : <Navigate to="/login" />;
 };
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className=\"App\">
+        <div className="App">
           <Routes>
-            <Route path=\"/login\" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route
-              path=\"/dashboard\"
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
@@ -38,16 +38,16 @@ function App() {
               }
             />
             <Route
-              path=\"/catalog\"
+              path="/catalog"
               element={
                 <ProtectedRoute>
                   <CatalogPage />
                 </ProtectedRoute>
               }
             />
-            <Route path=\"/\" element={<Navigate to=\"/dashboard\" />} />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
-          <Toaster position=\"top-right\" />
+          <Toaster position="top-right" />
         </div>
       </BrowserRouter>
     </AuthProvider>
