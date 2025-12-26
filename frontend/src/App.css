@@ -1,34 +1,131 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+/* App-specific styles */
+.App {
+  min-height: 100vh;
 }
 
 .App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+  background: linear-gradient(135deg, #9B2C2C 0%, #D69E2E 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  padding: 2rem;
 }
 
 .App-link {
-    color: #61dafb;
+  color: #F3E8FF;
+  transition: all 0.3s ease;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.App-link:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+.App-link img {
+  width: 120px;
+  height: 120px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.App-link:hover img {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+  transform: translateY(-5px);
+}
+
+/* Dashboard Grid */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.bento-item {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.bento-item:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Live Control Panel - Dark Mode */
+.live-control-panel {
+  background: #0F172A;
+  color: #FFFFFF;
+  min-height: 100vh;
+}
+
+.live-control-panel .card {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+}
+
+/* Saree Card */
+.saree-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.saree-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(155, 44, 44, 0.2);
+}
+
+.saree-card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.saree-card:hover img {
+  transform: scale(1.05);
+}
+
+/* Order Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.status-pending {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.status-confirmed {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.status-paid {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.status-shipped {
+  background: #E0E7FF;
+  color: #3730A3;
+}
+
+.status-cancelled {
+  background: #FEE2E2;
+  color: #991B1B;
 }
