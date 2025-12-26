@@ -32,7 +32,7 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-@router.post("/sessions", response_model=LiveSession)
+@router.post("/sessions/", response_model=LiveSession)
 async def create_live_session(session: LiveSessionCreate):
     """Start a new live session"""
     db = get_database()
@@ -53,7 +53,7 @@ async def create_live_session(session: LiveSessionCreate):
     await db.live_sessions.insert_one(session_doc.copy())
     return LiveSession(**session_doc)
 
-@router.get("/sessions", response_model=List[LiveSession])
+@router.get("/sessions/", response_model=List[LiveSession])
 async def get_live_sessions():
     """Get all live sessions"""
     db = get_database()
