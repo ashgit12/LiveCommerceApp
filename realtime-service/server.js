@@ -71,41 +71,39 @@ async function createOrderFromComment(sessionId, comment, keyword) {
       return null;
     }
     
-    // Create order
-    const orderId = `ORD-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
-    const order = {
-      id: generateUUID(),
-      order_id: orderId,
-      seller_id: saree.seller_id,
-      live_session_id: sessionId,
-      saree_id: saree.id,
-      saree_code: keyword.saree_code,
-      customer_name: comment.username,
-      phone_number: '', // To be collected via WhatsApp
-      address: null,
-      payment_method: 'cod',
-      payment_status: 'pending',
-      order_status: 'pending',
-      amount: saree.price,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    // Create order via API
+    const axios = require('axios');
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8001';
     
-    await db.collection('live_orders').insertOne(order);
-    
-    // Lock inventory for 15 minutes
-    await redis.setex(lockKey, 900, orderId);
-    
-    // Update session stats
-    await db.collection('live_sessions').updateOne(
-      { id: sessionId },
-      { 
-        $inc: { total_orders: 1, total_revenue: saree.price }
-      }
-    );
-    
-    console.log(`Order ${orderId} created for ${keyword.saree_code}`);
-    return order;
+    try {
+      const orderResponse = await axios.post(`${backendUrl}/api/orders/`, {
+        saree_code: keyword.saree_code,
+        customer_name: comment.username,
+        phone_number: '', // Will be collected via WhatsApp
+        payment_method: 'upi'
+      }, {
+        params: {
+          live_session_id: sessionId
+        }
+      });
+      
+      const order = orderResponse.data;
+      console.log(`Order ${order.order_id} created automatically for ${keyword.saree_code}`);
+      
+      // Lock inventory for 15 minutes (backend will also lock, this is backup)
+      await redis.setex(lockKey, 900, order.order_id);
+      
+      // Broadcast order creation to all clients
+      broadcast({
+        type: 'order_created',
+        data: order
+      });
+      
+      return order;
+    } catch (apiError) {
+      console.error('Failed to create order via API:', apiError.message);
+      return null;
+    }
   } catch (error) {
     console.error('Error creating order:', error);
     return null;
