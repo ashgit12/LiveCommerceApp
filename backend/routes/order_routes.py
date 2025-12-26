@@ -36,10 +36,13 @@ async def send_whatsapp_and_payment_link(order: dict, saree: dict):
             amount=order['amount'],
             customer_name=order['customer_name'],
             customer_phone=order['phone_number'],
-            description=f\"Payment for Saree {order['saree_code']}\"\n        )\n        
+            description=f"Payment for Saree {order['saree_code']}"
+        )
+        
         if payment_data:
             # Store payment transaction
-            db = get_database()\n            await db.payment_transactions.insert_one({
+            db = get_database()
+            await db.payment_transactions.insert_one({
                 'id': str(uuid.uuid4()),
                 'order_id': order['order_id'],
                 'gateway': payment_data['gateway'],
@@ -72,66 +75,70 @@ async def send_whatsapp_and_payment_link(order: dict, saree: dict):
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            logger.info(f\"WhatsApp and payment link sent for order {order['order_id']}\")\n        else:
-            logger.error(f\"Failed to create payment link for order {order['order_id']}\")\n            \n    except Exception as e:
-        logger.error(f\"Error in send_whatsapp_and_payment_link: {str(e)}\")
+            logger.info(f"WhatsApp and payment link sent for order {order['order_id']}")
+        else:
+            logger.error(f"Failed to create payment link for order {order['order_id']}")
+            
+    except Exception as e:
+        logger.error(f"Error in send_whatsapp_and_payment_link: {str(e)}")
 
-@router.post(\"/\", response_model=LiveOrder)
+@router.post("/", response_model=LiveOrder)
 async def create_order(order: OrderCreate, live_session_id: str, background_tasks: BackgroundTasks):
-    \"\"\"Create a new order with automatic WhatsApp and payment link\"\"\"
+    """Create a new order with automatic WhatsApp and payment link"""
     db = get_database()
     
     # Find saree
     saree = await db.sarees.find_one({
-        \"seller_id\": TEMP_SELLER_ID,
-        \"saree_code\": order.saree_code
+        "seller_id": TEMP_SELLER_ID,
+        "saree_code": order.saree_code
     })
     if not saree:
-        raise HTTPException(status_code=404, detail=\"Saree not found\")
+        raise HTTPException(status_code=404, detail="Saree not found")
     
     # Check stock
-    if saree[\"stock_quantity\"] <= 0:
-        raise HTTPException(status_code=400, detail=\"Saree out of stock\")
+    if saree["stock_quantity"] <= 0:
+        raise HTTPException(status_code=400, detail="Saree out of stock")
     
     # Check if already locked
     if redis_client:
-        lock_key = f\"lock:{saree['id']}\"
+        lock_key = f"lock:{saree['id']}"
         existing_lock = redis_client.get(lock_key)
         if existing_lock:
-            raise HTTPException(status_code=400, detail=\"Saree is currently reserved by another customer\")
+            raise HTTPException(status_code=400, detail="Saree is currently reserved by another customer")
     
-    order_id = f\"ORD-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}\"
+    order_id = f"ORD-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
     order_doc = {
-        \"id\": str(uuid.uuid4()),
-        \"order_id\": order_id,
-        \"seller_id\": TEMP_SELLER_ID,
-        \"live_session_id\": live_session_id,
-        \"saree_id\": saree[\"id\"],
-        \"saree_code\": order.saree_code,
-        \"customer_name\": order.customer_name,
-        \"phone_number\": order.phone_number,
-        \"address\": order.address,
-        \"payment_method\": order.payment_method.value,
-        \"payment_status\": \"pending\",
-        \"order_status\": \"pending\",
-        \"amount\": saree[\"price\"],
-        \"created_at\": datetime.utcnow().isoformat(),
-        \"updated_at\": datetime.utcnow().isoformat(),
-        \"expires_at\": (datetime.utcnow() + timedelta(minutes=15)).isoformat()
+        "id": str(uuid.uuid4()),
+        "order_id": order_id,
+        "seller_id": TEMP_SELLER_ID,
+        "live_session_id": live_session_id,
+        "saree_id": saree["id"],
+        "saree_code": order.saree_code,
+        "customer_name": order.customer_name,
+        "phone_number": order.phone_number,
+        "address": order.address,
+        "payment_method": order.payment_method.value,
+        "payment_status": "pending",
+        "order_status": "pending",
+        "amount": saree["price"],
+        "created_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat(),
+        "expires_at": (datetime.utcnow() + timedelta(minutes=15)).isoformat()
     }
     
     await db.live_orders.insert_one(order_doc.copy())
     
     # Lock inventory for 15 minutes
     if redis_client:
-        lock_key = f\"lock:{saree['id']}\"
+        lock_key = f"lock:{saree['id']}"
         redis_client.setex(lock_key, 900, order_id)  # 900 seconds = 15 minutes
-        logger.info(f\"Inventory locked for saree {order.saree_code}, order {order_id}\")\n    
+        logger.info(f"Inventory locked for saree {order.saree_code}, order {order_id}")
+    
     # Update session stats
     await db.live_sessions.update_one(
-        {\"id\": live_session_id},
+        {"id": live_session_id},
         {
-            \"$inc\": {\"total_orders\": 1, \"total_revenue\": saree[\"price\"]}
+            "$inc": {"total_orders": 1, "total_revenue": saree["price"]}
         }
     )
     
@@ -148,7 +155,8 @@ async def create_order(order: OrderCreate, live_session_id: str, background_task
             order_doc['amount']
         )
     
-    logger.info(f\"Order created: {order_id} for saree {order.saree_code}\")\n    
+    logger.info(f"Order created: {order_id} for saree {order.saree_code}")
+    
     return LiveOrder(**order_doc)
 
 @router.get("/", response_model=List[LiveOrder])
