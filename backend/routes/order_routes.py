@@ -1,21 +1,23 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from models import OrderCreate, LiveOrder, OrderStatus, PaymentStatus
 from database import get_database
-from auth import get_current_seller
 import uuid
 from datetime import datetime
 
 router = APIRouter(prefix="/api/orders", tags=["Orders"])
 
+# Temporary seller ID for testing without auth
+TEMP_SELLER_ID = "temp-seller-123"
+
 @router.post("/", response_model=LiveOrder)
-async def create_order(order: OrderCreate, live_session_id: str, seller: dict = Depends(get_current_seller)):
+async def create_order(order: OrderCreate, live_session_id: str):
     """Create a new order"""
     db = get_database()
     
     # Find saree
     saree = await db.sarees.find_one({
-        "seller_id": seller["id"],
+        "seller_id": TEMP_SELLER_ID,
         "saree_code": order.saree_code
     })
     if not saree:
@@ -29,7 +31,7 @@ async def create_order(order: OrderCreate, live_session_id: str, seller: dict = 
     order_doc = {
         "id": str(uuid.uuid4()),
         "order_id": order_id,
-        "seller_id": seller["id"],
+        "seller_id": TEMP_SELLER_ID,
         "live_session_id": live_session_id,
         "saree_id": saree["id"],
         "saree_code": order.saree_code,
@@ -57,14 +59,11 @@ async def create_order(order: OrderCreate, live_session_id: str, seller: dict = 
     return LiveOrder(**order_doc)
 
 @router.get("/", response_model=List[LiveOrder])
-async def get_orders(
-    status: Optional[OrderStatus] = None,
-    seller: dict = Depends(get_current_seller)
-):
+async def get_orders(status: Optional[OrderStatus] = None):
     """Get all orders for seller"""
     db = get_database()
     
-    query = {"seller_id": seller["id"]}
+    query = {"seller_id": TEMP_SELLER_ID}
     if status:
         query["order_status"] = status.value
     
@@ -72,11 +71,11 @@ async def get_orders(
     return [LiveOrder(**o) for o in orders]
 
 @router.get("/{order_id}", response_model=LiveOrder)
-async def get_order(order_id: str, seller: dict = Depends(get_current_seller)):
+async def get_order(order_id: str):
     """Get specific order"""
     db = get_database()
     order = await db.live_orders.find_one(
-        {"order_id": order_id, "seller_id": seller["id"]},
+        {"order_id": order_id, "seller_id": TEMP_SELLER_ID},
         {"_id": 0}
     )
     if not order:
@@ -84,15 +83,11 @@ async def get_order(order_id: str, seller: dict = Depends(get_current_seller)):
     return LiveOrder(**order)
 
 @router.put("/{order_id}/status")
-async def update_order_status(
-    order_id: str,
-    order_status: OrderStatus,
-    seller: dict = Depends(get_current_seller)
-):
+async def update_order_status(order_id: str, order_status: OrderStatus):
     """Update order status"""
     db = get_database()
     result = await db.live_orders.update_one(
-        {"order_id": order_id, "seller_id": seller["id"]},
+        {"order_id": order_id, "seller_id": TEMP_SELLER_ID},
         {"$set": {
             "order_status": order_status.value,
             "updated_at": datetime.utcnow().isoformat()

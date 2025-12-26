@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from typing import List
 from models import LiveSessionCreate, LiveSession, ProductPin, LiveComment
 from database import get_database
-from auth import get_current_seller
 import uuid
 from datetime import datetime
 import json
 
 router = APIRouter(prefix="/api/live", tags=["Live Sessions"])
+
+# Temporary seller ID for testing without auth
+TEMP_SELLER_ID = "temp-seller-123"
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -31,14 +33,14 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 @router.post("/sessions", response_model=LiveSession)
-async def create_live_session(session: LiveSessionCreate, seller: dict = Depends(get_current_seller)):
+async def create_live_session(session: LiveSessionCreate):
     """Start a new live session"""
     db = get_database()
     
     session_id = str(uuid.uuid4())
     session_doc = {
         "id": session_id,
-        "seller_id": seller["id"],
+        "seller_id": TEMP_SELLER_ID,
         "platforms": [p.value for p in session.platforms],
         "title": session.title,
         "start_time": datetime.utcnow().isoformat(),
@@ -52,21 +54,21 @@ async def create_live_session(session: LiveSessionCreate, seller: dict = Depends
     return LiveSession(**session_doc)
 
 @router.get("/sessions", response_model=List[LiveSession])
-async def get_live_sessions(seller: dict = Depends(get_current_seller)):
+async def get_live_sessions():
     """Get all live sessions"""
     db = get_database()
     sessions = await db.live_sessions.find(
-        {"seller_id": seller["id"]},
+        {"seller_id": TEMP_SELLER_ID},
         {"_id": 0}
     ).sort("start_time", -1).to_list(100)
     return [LiveSession(**s) for s in sessions]
 
 @router.post("/sessions/{session_id}/end")
-async def end_live_session(session_id: str, seller: dict = Depends(get_current_seller)):
+async def end_live_session(session_id: str):
     """End a live session"""
     db = get_database()
     result = await db.live_sessions.update_one(
-        {"id": session_id, "seller_id": seller["id"]},
+        {"id": session_id, "seller_id": TEMP_SELLER_ID},
         {"$set": {"end_time": datetime.utcnow().isoformat(), "status": "ended"}}
     )
     if result.matched_count == 0:
@@ -74,12 +76,12 @@ async def end_live_session(session_id: str, seller: dict = Depends(get_current_s
     return {"message": "Session ended successfully"}
 
 @router.post("/sessions/{session_id}/pin")
-async def pin_saree(session_id: str, saree_code: str, seller: dict = Depends(get_current_seller)):
+async def pin_saree(session_id: str, saree_code: str):
     """Pin a saree during live session"""
     db = get_database()
     
     # Find saree
-    saree = await db.sarees.find_one({"seller_id": seller["id"], "saree_code": saree_code})
+    saree = await db.sarees.find_one({"seller_id": TEMP_SELLER_ID, "saree_code": saree_code})
     if not saree:
         raise HTTPException(status_code=404, detail="Saree not found")
     
@@ -103,7 +105,7 @@ async def pin_saree(session_id: str, saree_code: str, seller: dict = Depends(get
     return ProductPin(**pin_doc)
 
 @router.get("/sessions/{session_id}/comments")
-async def get_session_comments(session_id: str, seller: dict = Depends(get_current_seller)):
+async def get_session_comments(session_id: str):
     """Get comments for a live session"""
     db = get_database()
     comments = await db.live_comments.find(
