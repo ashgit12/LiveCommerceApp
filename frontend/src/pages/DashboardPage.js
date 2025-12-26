@@ -70,7 +70,7 @@ const DashboardPage = () => {
         
         <nav className="flex-1 space-y-4">
           <NavIcon icon={LayoutGrid} label="Dashboard" active={isActive('/dashboard')} onClick={() => navigate('/dashboard')} />
-          <NavIcon icon={Package} label="Catalog" active={isActive('/catalog')} onClick={() => navigate('/catalog')} />
+          <NavIcon icon={Package} label="Inventory" active={isActive('/inventory')} onClick={() => navigate('/inventory')} />
           <NavIcon icon={ShoppingCart} label="Orders" active={isActive('/orders')} onClick={() => navigate('/orders')} />
           <NavIcon icon={BarChart3} label="Analytics" active={isActive('/analytics')} onClick={() => navigate('/analytics')} />
           <NavIcon icon={Link2} label="Connect" active={isActive('/connect-accounts')} onClick={() => navigate('/connect-accounts')} />
@@ -143,10 +143,10 @@ const DashboardPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <QuickLinkCard
               icon={Package}
-              title="Saree Catalog"
-              description="Manage your products"
-              onClick={() => navigate('/catalog')}
-              testId="catalog-link"
+              title="Inventory"
+              description="Stock levels and management"
+              onClick={() => navigate('/inventory')}
+              testId="inventory-link"
             />
             <QuickLinkCard
               icon={ShoppingCart}

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from './components/ui/sonner';
 import DashboardPage from './pages/DashboardPage';
 import CatalogPage from './pages/CatalogPage';
+import InventoryDashboard from './pages/InventoryDashboard';
 import OrdersPage from './pages/OrdersPage';
 import GoLivePage from './pages/GoLivePage';
 import LiveControlPage from './pages/LiveControlPage';
@@ -17,6 +18,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/inventory" element={<InventoryDashboard />} />
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/go-live" element={<GoLivePage />} />
