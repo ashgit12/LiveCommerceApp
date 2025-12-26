@@ -167,7 +167,7 @@ const LiveControlPage = () => {
                       />
                       <div className="absolute top-4 left-4 bg-red-600/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2">
                         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                        <span className="text-white text-sm font-semibold">YOU'RE LIVE</span>
+                        <span className="text-white text-sm font-semibold">YOU&apos;RE LIVE</span>
                       </div>
                       <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg text-sm">
