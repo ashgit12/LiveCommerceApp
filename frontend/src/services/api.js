@@ -21,25 +21,25 @@ export const authService = {
 };
 
 export const sareeService = {
-  getAll: () => api.get('/sarees'),
+  getAll: () => api.get('/sarees/'),
   getOne: (id) => api.get(`/sarees/${id}`),
-  create: (data) => api.post('/sarees', data),
+  create: (data) => api.post('/sarees/', data),
   update: (id, data) => api.put(`/sarees/${id}`, data),
   delete: (id) => api.delete(`/sarees/${id}`),
 };
 
 export const liveService = {
-  getSessions: () => api.get('/live/sessions'),
-  createSession: (data) => api.post('/live/sessions', data),
+  getSessions: () => api.get('/live/sessions/'),
+  createSession: (data) => api.post('/live/sessions/', data),
   endSession: (id) => api.post(`/live/sessions/${id}/end`),
   pinSaree: (sessionId, sareeCode) => api.post(`/live/sessions/${sessionId}/pin`, null, { params: { saree_code: sareeCode } }),
   getComments: (sessionId) => api.get(`/live/sessions/${sessionId}/comments`),
 };
 
 export const orderService = {
-  getAll: (status) => api.get('/orders', { params: { status } }),
+  getAll: (status) => api.get('/orders/', { params: { status } }),
   getOne: (orderId) => api.get(`/orders/${orderId}`),
-  create: (data, sessionId) => api.post('/orders', data, { params: { live_session_id: sessionId } }),
+  create: (data, sessionId) => api.post('/orders/', data, { params: { live_session_id: sessionId } }),
   updateStatus: (orderId, status) => api.put(`/orders/${orderId}/status`, null, { params: { order_status: status } }),
 };
 
