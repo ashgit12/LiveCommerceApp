@@ -11,7 +11,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 # Import database and routes
 from database import connect_to_mongo, close_mongo_connection
-from routes import auth_routes, saree_routes, live_routes, order_routes, payment_routes
+from routes import auth_routes, saree_routes, live_routes, order_routes, payment_routes, social_routes
 
 # Configure logging
 logging.basicConfig(
@@ -54,6 +54,7 @@ app.include_router(saree_routes.router)
 app.include_router(live_routes.router)
 app.include_router(order_routes.router)
 app.include_router(payment_routes.router)
+app.include_router(social_routes.router)
 
 # Health check
 @app.get("/api/health")

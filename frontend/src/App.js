@@ -8,6 +8,7 @@ import GoLivePage from './pages/GoLivePage';
 import LiveControlPage from './pages/LiveControlPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
+import ConnectAccountsPage from './pages/ConnectAccountsPage';
 import './App.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/live-control/:sessionId" element={<LiveControlPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/connect-accounts" element={<ConnectAccountsPage />} />
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
         <Toaster position="top-right" />
