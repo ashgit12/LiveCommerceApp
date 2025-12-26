@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="SareeLive OS API",
     description="India's first Saree Live Commerce Platform",
-    version="1.0.0"
+    version="1.0.0",
+    redirect_slashes=False
 )
 
 # CORS configuration
