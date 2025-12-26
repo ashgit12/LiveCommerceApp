@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { liveService, orderService, sareeService } from '../services/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Video, Package, TrendingUp, DollarSign, ShoppingBag } from 'lucide-react';
+import { Video, Package, TrendingUp, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 
 const DashboardPage = () => {
-  const { seller, logout } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -50,7 +48,8 @@ const DashboardPage = () => {
 
       setRecentOrders(orders.slice(0, 5));
     } catch (error) {
-      toast.error('Failed to load dashboard data');
+      console.error('Failed to load dashboard data:', error);
+      // Don't show error toast for initial load without auth
     } finally {
       setLoading(false);
     }
@@ -64,9 +63,8 @@ const DashboardPage = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold heading-font text-primary">SareeLive OS</h1>
-              <p className="text-sm text-gray-600 mt-1">Welcome back, {seller?.business_name}</p>
+              <p className="text-sm text-gray-600 mt-1">Welcome to your Live Commerce Dashboard</p>
             </div>
-            <Button variant="outline" onClick={logout} data-testid="logout-btn">Logout</Button>
           </div>
         </div>
       </header>
@@ -78,7 +76,7 @@ const DashboardPage = () => {
           <Button 
             size="lg" 
             className="btn-hover-lift"
-            onClick={() => navigate('/go-live')}
+            onClick={() => toast.info('Go Live feature coming soon!')}
             data-testid="go-live-btn"
           >
             <Video className="mr-2 h-5 w-5" />
@@ -142,14 +140,14 @@ const DashboardPage = () => {
             </CardHeader>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/orders')} data-testid="orders-link">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => toast.info('Orders page coming soon!')} data-testid="orders-link">
             <CardHeader>
               <CardTitle className="text-lg">Orders</CardTitle>
               <CardDescription>Track and manage orders</CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/analytics')} data-testid="analytics-link">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => toast.info('Analytics coming soon!')} data-testid="analytics-link">
             <CardHeader>
               <CardTitle className="text-lg">Analytics</CardTitle>
               <CardDescription>View performance metrics</CardDescription>
@@ -165,7 +163,10 @@ const DashboardPage = () => {
           </CardHeader>
           <CardContent>
             {recentOrders.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">No orders yet</p>
+              <div className="text-center py-8">
+                <Package className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                <p className="text-gray-500">No orders yet. Start by adding sarees to your catalog!</p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {recentOrders.map((order) => (

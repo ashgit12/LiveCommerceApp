@@ -6,13 +6,10 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Add token to requests
+// Remove token interceptor for now
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Token handling removed
     return config;
   },
   (error) => Promise.reject(error)
