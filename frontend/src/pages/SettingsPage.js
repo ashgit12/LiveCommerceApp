@@ -62,6 +62,26 @@ const SettingsPage = () => {
 
           {/* Streaming Platforms */}
           <TabsContent value="streaming" className="space-y-6">
+            {/* Connect Accounts Banner */}
+            <Card className="bg-gradient-to-r from-primary to-secondary border-0">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between text-white">
+                  <div>
+                    <h3 className="text-lg font-bold mb-1">Connect Your Social Accounts</h3>
+                    <p className="text-sm opacity-90">Link Facebook, YouTube, and Instagram for seamless live streaming</p>
+                  </div>
+                  <Button 
+                    size="lg" 
+                    variant="secondary"
+                    onClick={() => window.location.href = '/connect-accounts'}
+                    data-testid="connect-accounts-btn"
+                  >
+                    Connect Now
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Facebook */}
             <Card>
               <CardHeader>
