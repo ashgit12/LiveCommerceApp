@@ -1,26 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { liveService, sareeService } from '../services/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
-import { Radio, StopCircle, Pin, MessageSquare, ShoppingBag, TrendingUp } from 'lucide-react';
+import { Radio, StopCircle, Pin, MessageSquare, ShoppingBag, TrendingUp, Camera, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 const LiveControlPage = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const videoRef = useRef(null);
   const [session, setSession] = useState(null);
   const [sarees, setSarees] = useState([]);
   const [comments, setComments] = useState([]);
   const [sareeCode, setSareeCode] = useState('');
   const [loading, setLoading] = useState(true);
+  const [stream, setStream] = useState(null);
 
   useEffect(() => {
     fetchData();
+    startCamera();
     const interval = setInterval(fetchComments, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
   }, [sessionId]);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+        audio: true
+      });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      console.error('Camera access error:', error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -73,6 +96,9 @@ const LiveControlPage = () => {
 
     try {
       await liveService.endSession(sessionId);
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
       toast.success('Live session ended');
       navigate('/dashboard');
     } catch (error) {
@@ -82,124 +108,134 @@ const LiveControlPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading live session...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-black text-white">
+      {/* Premium Header with Live Indicator */}
+      <header className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b border-red-500/30 backdrop-blur-xl">
+        <div className="max-w-[1920px] mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="live-indicator bg-red-600 rounded-full h-3 w-3"></div>
-                <span className="font-bold text-red-500 uppercase text-sm">Live</span>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="live-indicator bg-red-600 rounded-full h-4 w-4 shadow-lg shadow-red-500/50"></div>
+                  <div className="absolute inset-0 bg-red-600 rounded-full animate-ping opacity-75"></div>
+                </div>
+                <span className="font-bold text-red-500 uppercase text-lg tracking-wider">Live</span>
               </div>
-              <h1 className="text-xl font-bold">{session?.title}</h1>
+              <div className="h-8 w-px bg-gray-700"></div>
+              <h1 className="text-2xl font-bold text-white">{session?.title}</h1>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Eye className="h-4 w-4" />
+                <span>Live viewers tracking...</span>
+              </div>
             </div>
             <Button
-              variant="destructive"
+              size="lg"
+              className="bg-red-600 hover:bg-red-700 border-0 shadow-lg shadow-red-500/30"
               onClick={endSession}
               data-testid="end-live-btn"
             >
-              <StopCircle className="mr-2 h-4 w-4" />
+              <StopCircle className="mr-2 h-5 w-5" />
               End Live
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Stats */}
-          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-gray-800 border-gray-700" data-testid="live-stats">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-400 text-sm">Total Orders</p>
-                    <p className="text-3xl font-bold text-white">{session?.total_orders || 0}</p>
-                  </div>
-                  <ShoppingBag className="h-10 w-10 text-blue-500" />
+      <main className="max-w-[1920px] mx-auto px-6 py-6">
+        <div className="grid grid-cols-12 gap-6">
+          {/* Live Video Preview - Center */}
+          <div className="col-span-12 lg:col-span-7">
+            <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800 shadow-2xl">
+              <CardContent className="p-0">
+                <div className="aspect-video bg-black rounded-t-lg overflow-hidden relative group">
+                  {stream ? (
+                    <>
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-cover"
+                        data-testid="live-preview"
+                      />
+                      <div className="absolute top-4 left-4 bg-red-600/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        <span className="text-white text-sm font-semibold">YOU'RE LIVE</span>
+                      </div>
+                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg text-sm">
+                          <Camera className="inline h-4 w-4 mr-2" />
+                          Live Preview
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-500">
+                      <Camera className="h-20 w-20 mb-4" />
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-400 text-sm">Revenue</p>
-                    <p className="text-3xl font-bold text-white">₹{session?.total_revenue || 0}</p>
+                {/* Pin Saree Control */}
+                <div className="p-6 bg-gradient-to-r from-gray-900 to-gray-800">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Pin className="h-5 w-5 text-secondary" />
+                    <h3 className="text-lg font-semibold">Pin Saree</h3>
                   </div>
-                  <TrendingUp className="h-10 w-10 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-400 text-sm">Live Comments</p>
-                    <p className="text-3xl font-bold text-white">{comments.length}</p>
+                  <div className="flex gap-3">
+                    <Input
+                      placeholder="Enter saree code (e.g., SAR001)"
+                      value={sareeCode}
+                      onChange={(e) => setSareeCode(e.target.value.toUpperCase())}
+                      onKeyPress={(e) => e.key === 'Enter' && pinSaree()}
+                      className="bg-black/50 border-gray-700 text-white text-lg"
+                      data-testid="pin-saree-input"
+                    />
+                    <Button onClick={pinSaree} size="lg" className="bg-gradient-to-r from-primary to-secondary" data-testid="pin-saree-btn">
+                      <Pin className="h-5 w-5 mr-2" />
+                      Pin
+                    </Button>
                   </div>
-                  <MessageSquare className="h-10 w-10 text-purple-500" />
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    {sarees.slice(0, 8).map(saree => (
+                      <Button
+                        key={saree.id}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSareeCode(saree.saree_code);
+                          pinSaree();
+                        }}
+                        className="bg-gray-800/50 border-gray-700 hover:bg-gray-700 hover:border-primary"
+                        data-testid={`quick-pin-${saree.saree_code}`}
+                      >
+                        {saree.saree_code}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Pin Saree */}
-          <div className="lg:col-span-2">
-            <Card className="bg-gray-800 border-gray-700 mb-6">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Pin className="h-5 w-5" />
-                  Pin Saree
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter saree code"
-                    value={sareeCode}
-                    onChange={(e) => setSareeCode(e.target.value.toUpperCase())}
-                    onKeyPress={(e) => e.key === 'Enter' && pinSaree()}
-                    className="bg-gray-700 border-gray-600 text-white"
-                    data-testid="pin-saree-input"
-                  />
-                  <Button onClick={pinSaree} data-testid="pin-saree-btn">
-                    <Pin className="h-4 w-4 mr-2" />
-                    Pin
-                  </Button>
-                </div>
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {sarees.slice(0, 8).map(saree => (
-                    <Button
-                      key={saree.id}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSareeCode(saree.saree_code);
-                        pinSaree();
-                      }}
-                      className="bg-gray-700 border-gray-600 hover:bg-gray-600 text-white"
-                      data-testid={`quick-pin-${saree.saree_code}`}
-                    >
-                      {saree.saree_code}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Stats & Comments - Right Side */}
+          <div className="col-span-12 lg:col-span-5 space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-3 gap-4">
+              <StatCard icon={ShoppingBag} value={session?.total_orders || 0} label="Orders" color="blue" />
+              <StatCard icon={TrendingUp} value={`₹${session?.total_revenue || 0}`} label="Revenue" color="green" />
+              <StatCard icon={MessageSquare} value={comments.length} label="Comments" color="purple" />
+            </div>
 
-            {/* Comments Feed */}
-            <Card className="bg-gray-800 border-gray-700">
+            {/* Live Comments Feed */}
+            <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <MessageSquare className="h-5 w-5" />
@@ -207,26 +243,31 @@ const LiveControlPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto" data-testid="comments-feed">
+                <div className="space-y-3 max-h-[calc(100vh-500px)] overflow-y-auto custom-scrollbar" data-testid="comments-feed">
                   {comments.length === 0 ? (
-                    <p className="text-gray-400 text-center py-8">No comments yet. Comments will appear here in real-time.</p>
+                    <div className="text-center py-12">
+                      <MessageSquare className="mx-auto h-12 w-12 text-gray-700 mb-3" />
+                      <p className="text-gray-500">Comments will appear here in real-time</p>
+                    </div>
                   ) : (
                     comments.map((comment, idx) => (
-                      <div key={idx} className="bg-gray-700 rounded-lg p-3">
+                      <div key={idx} className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50 hover:border-primary/30 transition-all">
                         <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-sm">{comment.username}</p>
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm text-white">{comment.username}</p>
                             <p className="text-gray-300 text-sm mt-1">{comment.comment_text}</p>
                           </div>
                           {comment.matched_keyword && (
-                            <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">
+                            <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs rounded-full font-bold shadow-lg">
                               {comment.matched_keyword}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {comment.platform} • {new Date(comment.timestamp).toLocaleTimeString()}
-                        </p>
+                        <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                          <span className="px-2 py-1 bg-gray-900 rounded">{comment.platform}</span>
+                          <span>•</span>
+                          <span>{new Date(comment.timestamp).toLocaleTimeString()}</span>
+                        </div>
                       </div>
                     ))
                   )}
@@ -234,47 +275,29 @@ const LiveControlPage = () => {
               </CardContent>
             </Card>
           </div>
-
-          {/* Saree List */}
-          <div>
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">Available Sarees</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {sarees.map(saree => (
-                    <div key={saree.id} className="bg-gray-700 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold">{saree.saree_code}</p>
-                          <p className="text-sm text-gray-400">{saree.fabric} • {saree.color}</p>
-                          <p className="text-sm font-bold text-secondary mt-1">₹{saree.price}</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSareeCode(saree.saree_code);
-                            pinSaree();
-                          }}
-                          className="bg-gray-600 border-gray-500 hover:bg-gray-500"
-                        >
-                          Pin
-                        </Button>
-                      </div>
-                      <div className="mt-2 text-xs text-gray-400">
-                        Stock: {saree.stock_quantity}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </main>
     </div>
+  );
+};
+
+const StatCard = ({ icon: Icon, value, label, color }) => {
+  const colorClasses = {
+    blue: 'from-blue-500 to-blue-600',
+    green: 'from-green-500 to-green-600',
+    purple: 'from-purple-500 to-purple-600'
+  };
+
+  return (
+    <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800">
+      <CardContent className="pt-6 text-center">
+        <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center shadow-lg`}>
+          <Icon className="h-6 w-6 text-white" />
+        </div>
+        <p className="text-2xl font-bold text-white">{value}</p>
+        <p className="text-xs text-gray-500 mt-1">{label}</p>
+      </CardContent>
+    </Card>
   );
 };
 
