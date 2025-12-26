@@ -25,8 +25,13 @@ class PaymentService:
         # Create a unique mock payment ID
         mock_id = hashlib.md5(f"{order_id}{amount}{datetime.now().isoformat()}".encode()).hexdigest()[:12]
         
-        # Generate demo payment link (will redirect to a demo page)
-        base_url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
+        # Generate demo payment link - use frontend URL's base for external access
+        frontend_url = os.environ.get('FRONTEND_URL', '')
+        if frontend_url:
+            # Extract base domain from frontend URL and use it for API
+            base_url = frontend_url.replace('http://', 'https://').rstrip('/')
+        else:
+            base_url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
         mock_link = f"{base_url}/api/payments/demo/{mock_id}"
         
         return {
