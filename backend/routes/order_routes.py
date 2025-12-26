@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from typing import List, Optional
 from models import OrderCreate, LiveOrder, OrderStatus, PaymentStatus
 from database import get_database
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import redis
 import logging
 
@@ -31,7 +31,7 @@ async def send_whatsapp_and_payment_link(order: dict, saree: dict):
     """Background task to send WhatsApp message with payment link"""
     try:
         # Generate payment link
-        payment_data = payment_service.create_razorpay_payment_link(
+        payment_data = await payment_service.create_razorpay_payment_link(
             order_id=order['order_id'],
             amount=order['amount'],
             customer_name=order['customer_name'],
@@ -50,11 +50,13 @@ async def send_whatsapp_and_payment_link(order: dict, saree: dict):
                 'status': 'pending',
                 'payment_link': payment_data['payment_link'],
                 'reference_id': payment_data['payment_id'],
-                'created_at': datetime.utcnow().isoformat()
+                'created_at': datetime.now(timezone.utc).isoformat(),
+                'mock': payment_data.get('mock', False)
             })
             
             # Send WhatsApp message
-            whatsapp_service.send_order_interest(
+            await whatsapp_service.send_order_interest(
+                order_id=order['order_id'],
                 customer_phone=order['phone_number'],
                 customer_name=order['customer_name'],
                 saree_code=order['saree_code'],
@@ -62,25 +64,25 @@ async def send_whatsapp_and_payment_link(order: dict, saree: dict):
                 payment_link=payment_data['payment_link']
             )
             
-            # Log WhatsApp message
-            await db.whatsapp_messages.insert_one({
-                'id': str(uuid.uuid4()),
-                'order_id': order['order_id'],
-                'phone_number': order['phone_number'],
-                'message_type': 'template',
-                'direction': 'outbound',
-                'content': 'Order interest with payment link',
-                'delivery_status': 'sent',
-                'template_name': 'order_interest',
-                'timestamp': datetime.utcnow().isoformat()
-            })
-            
             logger.info(f"WhatsApp and payment link sent for order {order['order_id']}")
         else:
             logger.error(f"Failed to create payment link for order {order['order_id']}")
             
     except Exception as e:
         logger.error(f"Error in send_whatsapp_and_payment_link: {str(e)}")
+
+async def send_cod_message(order: dict):
+    """Background task to send COD confirmation"""
+    try:
+        await whatsapp_service.send_cod_confirmation(
+            customer_phone=order['phone_number'],
+            order_id=order['order_id'],
+            saree_code=order['saree_code'],
+            amount=order['amount']
+        )
+        logger.info(f"COD confirmation sent for order {order['order_id']}")
+    except Exception as e:
+        logger.error(f"Error sending COD confirmation: {str(e)}")
 
 @router.post("/", response_model=LiveOrder)
 async def create_order(order: OrderCreate, live_session_id: str, background_tasks: BackgroundTasks):
@@ -106,7 +108,7 @@ async def create_order(order: OrderCreate, live_session_id: str, background_task
         if existing_lock:
             raise HTTPException(status_code=400, detail="Saree is currently reserved by another customer")
     
-    order_id = f"ORD-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
+    order_id = f"ORD-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
     order_doc = {
         "id": str(uuid.uuid4()),
         "order_id": order_id,
@@ -121,9 +123,9 @@ async def create_order(order: OrderCreate, live_session_id: str, background_task
         "payment_status": "pending",
         "order_status": "pending",
         "amount": saree["price"],
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
-        "expires_at": (datetime.utcnow() + timedelta(minutes=15)).isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
     }
     
     await db.live_orders.insert_one(order_doc.copy())
@@ -146,14 +148,7 @@ async def create_order(order: OrderCreate, live_session_id: str, background_task
     if order.payment_method.value == 'upi' or order.payment_method.value == 'card':
         background_tasks.add_task(send_whatsapp_and_payment_link, order_doc, saree)
     elif order.payment_method.value == 'cod':
-        # Send COD confirmation
-        background_tasks.add_task(
-            whatsapp_service.send_cod_confirmation,
-            order_doc['phone_number'],
-            order_doc['order_id'],
-            order_doc['saree_code'],
-            order_doc['amount']
-        )
+        background_tasks.add_task(send_cod_message, order_doc)
     
     logger.info(f"Order created: {order_id} for saree {order.saree_code}")
     
@@ -191,9 +186,31 @@ async def update_order_status(order_id: str, order_status: OrderStatus):
         {"order_id": order_id, "seller_id": TEMP_SELLER_ID},
         {"$set": {
             "order_status": order_status.value,
-            "updated_at": datetime.utcnow().isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat()
         }}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
     return {"message": "Order status updated successfully"}
+
+@router.get("/{order_id}/messages")
+async def get_order_messages(order_id: str):
+    """Get all WhatsApp messages for an order"""
+    db = get_database()
+    messages = await db.whatsapp_messages.find(
+        {"order_id": order_id},
+        {"_id": 0}
+    ).sort("timestamp", -1).to_list(100)
+    return messages
+
+@router.get("/{order_id}/payment")
+async def get_order_payment(order_id: str):
+    """Get payment details for an order"""
+    db = get_database()
+    payment = await db.payment_transactions.find_one(
+        {"order_id": order_id},
+        {"_id": 0}
+    )
+    if not payment:
+        return {"status": "no_payment", "order_id": order_id}
+    return payment
