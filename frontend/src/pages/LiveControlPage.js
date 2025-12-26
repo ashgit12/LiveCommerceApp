@@ -28,7 +28,7 @@ const LiveControlPage = () => {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [sessionId]);
+  }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startCamera = async () => {
     try {
