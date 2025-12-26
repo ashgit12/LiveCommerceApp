@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title=\"SareeLive OS API\",
-    description=\"India's first Saree Live Commerce Platform\",
-    version=\"1.0.0\"
+    title="SareeLive OS API",
+    description="India's first Saree Live Commerce Platform",
+    version="1.0.0"
 )
 
 # CORS configuration
@@ -32,20 +32,20 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=[\"*\"],
-    allow_headers=[\"*\"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Events
-@app.on_event(\"startup\")
+@app.on_event("startup")
 async def startup():
     await connect_to_mongo()
-    logger.info(\"SareeLive OS API started successfully\")
+    logger.info("SareeLive OS API started successfully")
 
-@app.on_event(\"shutdown\")
+@app.on_event("shutdown")
 async def shutdown():
     await close_mongo_connection()
-    logger.info(\"SareeLive OS API shut down\")
+    logger.info("SareeLive OS API shut down")
 
 # Include routers
 app.include_router(auth_routes.router)
@@ -55,10 +55,10 @@ app.include_router(order_routes.router)
 app.include_router(payment_routes.router)
 
 # Health check
-@app.get(\"/api/health\")
+@app.get("/api/health")
 async def health_check():
     return {
-        \"status\": \"healthy\",
-        \"service\": \"SareeLive OS API\",
-        \"version\": \"1.0.0\"
+        "status": "healthy",
+        "service": "SareeLive OS API",
+        "version": "1.0.0"
     }
